@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Cairo", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #facc15;
+  --color-primary-hover: #eab308;
+  --color-accent: #dc2626;
+  --color-accent-deep: #991b1b;
+  --color-accent-soft: #fef2f2;
+}
+
+@layer base {
+  html {
+    direction: rtl;
+  }
+}
+
+body {
+  @apply bg-slate-50 font-sans text-slate-900;
+}
+
+.modern-card {
+  @apply bg-white border border-slate-200 shadow-sm rounded-xl p-4 transition-all;
+}
+
+.btn-primary {
+  @apply bg-primary hover:bg-primary-hover text-slate-900 font-black px-6 py-4 rounded-xl shadow-sm transition-all active:scale-95;
+}
+
+.btn-accent {
+  @apply bg-accent hover:bg-red-700 text-white font-bold px-6 py-4 rounded-xl shadow-sm transition-all active:scale-95;
+}
+
+input, select {
+  @apply w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm;
+}
+
+.rank-1-card {
+  @apply bg-accent text-white p-4 rounded-2xl flex items-center justify-between shadow-lg border-b-4 border-accent-deep ring-4 ring-red-100;
+}

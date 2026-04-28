@@ -1,0 +1,6 @@
+{
+  "name": "صدارة فكرة",
+  "description": "تطبيق متطور لإدارة نقاط مسابقات الطلاب - صدارة فكرة.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

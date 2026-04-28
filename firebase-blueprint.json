@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "A student participating in the competition.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the student" },
+        "points": { "type": "number", "description": "Total points earned" },
+        "qrCode": { "type": "string", "description": "Unique identifier for QR scanning" },
+        "grade": { "type": "string", "description": "Student's grade or level" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "points", "qrCode"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "An administrator with supervisor privileges.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "Admin's email" },
+        "name": { "type": "string", "description": "Admin's name" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "students": {
+      "schema": "Student",
+      "description": "Collection of students."
+    },
+    "admins": {
+      "schema": "Admin",
+      "description": "Collection of admins."
+    }
+  }
+}
