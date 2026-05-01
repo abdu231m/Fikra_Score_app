@@ -9,6 +9,13 @@
         "points": { "type": "number", "description": "Total points earned" },
         "qrCode": { "type": "string", "description": "Unique identifier for QR scanning" },
         "grade": { "type": "string", "description": "Student's grade or level" },
+        "bio": { "type": "string", "description": "Student's biography or profile info" },
+        "avatarUrl": { "type": "string", "description": "URL to the student's profile image" },
+        "gallery": { 
+          "type": "array", 
+          "items": { "type": "string" },
+          "description": "Array of URLs for student's image gallery" 
+        },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
@@ -23,6 +30,31 @@
         "name": { "type": "string", "description": "Admin's name" }
       },
       "required": ["email"]
+    },
+    "CompetitionHistory": {
+      "title": "Competition History",
+      "description": "A record of a finished competition session.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the session" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "endedAt"]
+    },
+    "HistoryResult": {
+      "title": "History Result",
+      "description": "A specific student's result in a past competition.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "points": { "type": "number" },
+        "grade": { "type": "string" },
+        "rank": { "type": "number" },
+        "bio": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "gallery": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["name", "points", "rank"]
     }
   },
   "firestore": {
@@ -33,6 +65,14 @@
     "admins": {
       "schema": "Admin",
       "description": "Collection of admins."
+    },
+    "history": {
+      "schema": "CompetitionHistory",
+      "description": "Archive of past competitions."
+    },
+    "history/{sessionId}/results": {
+      "schema": "HistoryResult",
+      "description": "Detailed results for a competition session."
     }
   }
 }
