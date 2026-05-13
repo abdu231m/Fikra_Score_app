@@ -17,7 +17,12 @@ import {
   Camera,
   History,
   Image as ImageIcon,
-  Check
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Award,
+  Zap
 } from 'lucide-react';
 import { 
   db, 
@@ -570,6 +575,7 @@ const StudentActionModal = ({ student, isAdmin, onClose, onUpdatePoints, onUpdat
   const [editGallery, setEditGallery] = useState<string[]>(student.gallery || []);
   const [editCropImage, setEditCropImage] = useState<string | null>(null);
   const [editCroppingFor, setEditCroppingFor] = useState<'avatar' | 'gallery'>('avatar');
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
   const fileInputEditRef = useRef<HTMLInputElement>(null);
 
   const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -664,9 +670,14 @@ const StudentActionModal = ({ student, isAdmin, onClose, onUpdatePoints, onUpdat
             {student.gallery && student.gallery.length > 0 && (
               <div className="flex flex-wrap justify-center gap-2 mt-4 px-4">
                 {student.gallery.map((img, i) => (
-                  <div key={i} className="w-12 h-12 rounded-lg overflow-hidden border border-slate-100 shadow-sm">
+                  <motion.div 
+                    key={i} 
+                    whileHover={{ scale: 1.1 }}
+                    onClick={() => setSelectedGalleryImage(img)}
+                    className="w-12 h-12 rounded-lg overflow-hidden border border-slate-100 shadow-sm cursor-zoom-in"
+                  >
                     <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -852,6 +863,25 @@ const StudentActionModal = ({ student, isAdmin, onClose, onUpdatePoints, onUpdat
               onCropComplete={onEditCropComplete} 
             />
           )}
+          {selectedGalleryImage && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/95 z-[120] flex items-center justify-center p-4"
+              onClick={() => setSelectedGalleryImage(null)}
+            >
+              <div className="relative max-w-4xl max-h-full">
+                <img src={selectedGalleryImage} className="max-w-full max-h-[85vh] rounded-3xl" referrerPolicy="no-referrer" />
+                <button 
+                  onClick={() => setSelectedGalleryImage(null)}
+                  className="absolute -top-12 right-0 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </motion.div>
     </motion.div>
@@ -860,10 +890,109 @@ const StudentActionModal = ({ student, isAdmin, onClose, onUpdatePoints, onUpdat
 
 // --- Main App ---
 
-const HistoryModal = ({ history, onClose }: { history: CompetitionHistory[], onClose: () => void }) => {
+const HistoryProfileModal = ({ result, onClose }: { result: any, onClose: () => void }) => {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[110] flex items-center justify-center p-6"
+    >
+      <motion.div 
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative max-h-[90vh] overflow-y-auto"
+      >
+        <button onClick={onClose} className="absolute top-4 left-4 p-2 bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+          <X size={20} />
+        </button>
+
+        <div className="flex flex-col items-center mb-6 pt-4">
+          <div className="w-24 h-24 rounded-full border-4 border-slate-50 shadow-lg overflow-hidden mb-4 relative group">
+            {result.avatarUrl ? (
+              <img src={result.avatarUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
+                <UserIcon size={40} />
+              </div>
+            )}
+          </div>
+          <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-2 ${
+            result.rank === 1 ? 'bg-yellow-100 text-yellow-700' : 
+            result.rank === 2 ? 'bg-slate-200 text-slate-700' : 
+            result.rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-400'
+          }`}>
+            المركز {result.rank}
+          </div>
+          <h4 className="text-2xl font-black text-slate-800">{result.name}</h4>
+          <p className="text-sm font-bold text-slate-400">{result.grade || 'طالب'}</p>
+        </div>
+
+        <div className="bg-slate-50 rounded-2xl p-6 mb-6 text-center border border-slate-100">
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">النقاط المحققة</p>
+          <div className="flex items-center justify-center gap-2">
+            <Zap size={24} className="text-primary" fill="currentColor" />
+            <span className="text-4xl font-black text-accent">{result.points}</span>
+          </div>
+        </div>
+
+        {result.bio && (
+          <div className="mb-6 px-2">
+            <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 mr-1">نبذة الأرشيف</h5>
+            <p className="text-sm text-slate-600 leading-relaxed italic">"{result.bio}"</p>
+          </div>
+        )}
+
+        {result.gallery && result.gallery.length > 0 && (
+          <div className="space-y-3">
+            <h5 className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-2 mr-1">معرض الصور المؤرشف</h5>
+            <div className="grid grid-cols-3 gap-2">
+              {result.gallery.map((img: string, i: number) => (
+                <div 
+                  key={i} 
+                  className="aspect-square rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => setSelectedImage(img)}
+                >
+                  <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {selectedImage && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/95 z-[120] flex items-center justify-center p-4"
+              onClick={() => setSelectedImage(null)}
+            >
+              <div className="relative max-w-4xl max-h-full">
+                <img src={selectedImage} className="max-w-full max-h-[85vh] rounded-3xl" referrerPolicy="no-referrer" />
+                <button 
+                  onClick={() => setSelectedImage(null)}
+                  className="absolute -top-12 right-0 p-3 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const HistoryModal = ({ history, onClose, onDeleteSession, isAdmin }: { history: CompetitionHistory[], onClose: () => void, onDeleteSession: (id: string) => void, isAdmin: boolean }) => {
   const [selectedSession, setSelectedSession] = useState<CompetitionHistory | null>(null);
   const [sessionResults, setSessionResults] = useState<any[]>([]);
   const [loadingResults, setLoadingResults] = useState(false);
+  const [activeProfile, setActiveProfile] = useState<any>(null);
 
   const fetchResults = async (sessionId: string) => {
     setLoadingResults(true);
@@ -871,7 +1000,7 @@ const HistoryModal = ({ history, onClose }: { history: CompetitionHistory[], onC
       const resultsRef = collection(db, `history/${sessionId}/results`);
       const q = query(resultsRef, orderBy('rank', 'asc'));
       const snapshot = await getDocs(q);
-      const results = snapshot.docs.map(doc => doc.data());
+      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSessionResults(results);
     } catch (error) {
       console.error("Error fetching history results:", error);
@@ -888,121 +1017,237 @@ const HistoryModal = ({ history, onClose }: { history: CompetitionHistory[], onC
     }
   }, [selectedSession]);
 
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const pass = prompt('يرجى إدخال كلمة مرور الحذف:');
+    if (pass === '75321') {
+      onDeleteSession(id);
+    } else if (pass !== null) {
+      alert('كلمة المرور خاطئة');
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-6"
+      className="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[60] flex items-center justify-center p-4 sm:p-8"
     >
       <motion.div 
-        initial={{ scale: 0.9, y: 20 }}
+        initial={{ scale: 0.95, y: 30 }}
         animate={{ scale: 1, y: 0 }}
-        className="bg-white rounded-3xl p-8 max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"
+        className="bg-white rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-100"
       >
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-            <History className="text-primary" />
-            {selectedSession ? selectedSession.title : 'سجل المسابقات السابقة'}
-          </h3>
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+              <History size={24} />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-800 leading-none">الأرشيف الذهبي</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">سجل المسابقات والنتائج السابقة</p>
+            </div>
+          </div>
+          <div className="flex gap-2 self-start sm:self-auto">
             {selectedSession && (
               <button 
                 onClick={() => setSelectedSession(null)}
-                className="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all font-sans"
+                className="px-5 py-2.5 bg-slate-100 text-slate-600 rounded-2xl text-xs font-black hover:bg-slate-200 transition-all flex items-center gap-2"
               >
-                رجوع للقائمة
+                <ChevronRight size={16} />
+                <span>العودة للمسابقات</span>
               </button>
             )}
-            <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-400">
-              <X size={24} />
+            <button onClick={onClose} className="p-3 bg-slate-50 hover:bg-slate-100 rounded-2xl text-slate-400 transition-all">
+              <X size={20} />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-2 space-y-4 text-right">
+        <div className="flex-1 overflow-y-auto pr-2 space-y-6 text-right custom-scrollbar">
           {!selectedSession ? (
             history.length === 0 ? (
-              <div className="py-20 text-center">
-                <div className="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <History size={32} />
+              <div className="py-24 text-center">
+                <div className="w-20 h-20 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Award size={40} />
                 </div>
-                <p className="text-slate-400 font-bold">لا يوجد مسابقات مؤرشفة بعد</p>
+                <p className="text-slate-400 font-black text-lg">الأرشيف فارغ حالياً</p>
+                <p className="text-slate-300 text-xs font-bold mt-2">المسابقات المنتهية ستظهر هنا تلقائياً</p>
               </div>
             ) : (
-              history.map((session) => (
-                <div 
-                  key={session.id} 
-                  onClick={() => setSelectedSession(session)}
-                  className="bg-slate-50 rounded-2xl p-6 border border-slate-100 hover:border-primary/30 hover:bg-white transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(session.endedAt).toLocaleDateString('ar-EG')}</span>
-                    <h4 className="font-bold text-slate-800 text-lg group-hover:text-primary transition-colors">{session.title}</h4>
-                  </div>
-                  <div className="flex items-center justify-center p-4 bg-white/50 rounded-xl">
-                    <p className="text-[10px] text-primary font-black uppercase tracking-widest">عرض النتائج والبروفايلات المؤرشفة</p>
-                  </div>
-                </div>
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {history.map((session) => (
+                  <motion.div 
+                    key={session.id} 
+                    layoutId={session.id}
+                    onClick={() => setSelectedSession(session)}
+                    className="group bg-white rounded-3xl p-6 border-2 border-slate-50 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 transition-all cursor-pointer relative"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{new Date(session.endedAt).toLocaleDateString('ar-EG')}</span>
+                      <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:text-primary transition-colors">
+                        <History size={16} />
+                      </div>
+                    </div>
+                    <h4 className="font-black text-slate-800 text-xl mb-6 group-hover:text-primary transition-colors">{session.title}</h4>
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                      <div className="flex items-center gap-2">
+                        <div className="flex -space-x-3 rtl:space-x-reverse">
+                          {[1, 2, 3].map(i => (
+                            <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-black text-slate-400">
+                              #{i}
+                            </div>
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-black text-slate-400 mr-2">عرض النتائج</span>
+                      </div>
+                      {isAdmin && (
+                        <button 
+                          onClick={(e) => handleDelete(e, session.id)}
+                          className="p-2 opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             )
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 mb-8 flex items-center justify-between">
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">المسابقة المؤرشفة</p>
+                  <h4 className="text-2xl font-black text-slate-800">{selectedSession.title}</h4>
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">تاريخ الانتهاء</p>
+                  <p className="text-sm font-bold text-slate-600 font-sans">{new Date(selectedSession.endedAt).toLocaleDateString('ar-EG')}</p>
+                </div>
+              </div>
+
               {loadingResults ? (
-                <div className="py-20 text-center">
-                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                   <p className="text-slate-400 font-bold">جاري تحميل النتائج...</p>
+                <div className="py-24 text-center">
+                   <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                   <p className="text-slate-400 font-black">جاري استرجاع السجلات...</p>
                 </div>
               ) : (
-                sessionResults.map((res, i) => (
-                  <div 
-                    key={i}
-                    className="bg-slate-50 rounded-xl p-4 flex flex-col border border-slate-100"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${
+                <div className="space-y-4">
+                  {/* Top 3 Podium Area */}
+                  {sessionResults.length >= 3 && (
+                    <div className="grid grid-cols-3 gap-3 mb-8 items-end pb-8 border-b border-slate-50">
+                      {[1, 0, 2].map(idx => {
+                        const res = sessionResults[idx];
+                        if (!res) return null;
+                        const isFirst = res.rank === 1;
+                        return (
+                          <motion.div 
+                            key={res.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: idx * 0.1 }}
+                            onClick={() => setActiveProfile(res)}
+                            className="flex flex-col items-center cursor-pointer"
+                          >
+                            <div className="relative mb-3">
+                              <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 overflow-hidden shadow-lg ${
+                                isFirst ? 'border-yellow-400 scale-110 mb-2' : 
+                                res.rank === 2 ? 'border-slate-300' : 'border-orange-300'
+                              }`}>
+                                {res.avatarUrl ? (
+                                  <img src={res.avatarUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                ) : (
+                                  <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-300">
+                                    <UserIcon size={24} />
+                                  </div>
+                                )}
+                              </div>
+                              {isFirst && (
+                                <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-yellow-500 bg-white rounded-full p-1 shadow-sm">
+                                  <Trophy size={16} fill="currentColor" />
+                                </div>
+                              )}
+                            </div>
+                            <div className={`text-center ${isFirst ? 'font-black text-slate-800' : 'font-bold text-slate-600'}`}>
+                              <p className="text-xs truncate max-w-[80px]">{res.name}</p>
+                              <p className="text-lg text-accent">{res.points}</p>
+                            </div>
+                            <div className={`w-full h-2 rounded-full mt-2 ${
+                              isFirst ? 'bg-yellow-400' : 
+                              res.rank === 2 ? 'bg-slate-300' : 'bg-orange-300'
+                            }`}></div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {sessionResults.map((res, i) => (
+                    <motion.div 
+                      key={res.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      onClick={() => setActiveProfile(res)}
+                      className="bg-white rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between border border-slate-100 hover:border-primary/30 hover:shadow-lg transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg shadow-sm ${
                           res.rank === 1 ? 'bg-yellow-100 text-yellow-700' : 
                           res.rank === 2 ? 'bg-slate-100 text-slate-600' : 
-                          res.rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-white text-slate-300'
+                          res.rank === 3 ? 'bg-orange-50 text-orange-700' : 'bg-slate-50 text-slate-400'
                         }`}>
                           {res.rank}
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 overflow-hidden shrink-0">
+                        <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden shrink-0 shadow-inner group-hover:scale-105 transition-transform">
                           {res.avatarUrl ? (
                             <img src={res.avatarUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-200">
-                              <UserIcon size={20} />
+                              <UserIcon size={24} />
                             </div>
                           )}
                         </div>
                         <div>
-                          <p className="font-bold text-slate-800">{res.name}</p>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.grade || 'طالب'}</p>
+                          <p className="font-black text-lg text-slate-800 group-hover:text-primary transition-colors">{res.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.grade || 'طالب'}</p>
+                            <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                            <div className="flex items-center gap-1 text-primary text-[10px] font-black uppercase">
+                              <ImageIcon size={10} />
+                              <span>{res.gallery?.length || 0} صور</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-black text-slate-700">{res.points} نقطة</p>
+                      <div className="flex items-center justify-between mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-slate-50">
+                        <div className="text-right sm:ml-8">
+                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">مجموع النقاط</p>
+                          <p className="text-2xl font-black text-accent">{res.points}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white transition-all">
+                          <Eye size={18} />
+                        </div>
                       </div>
-                    </div>
-                    {res.bio && <p className="text-[11px] text-slate-500 italic mb-3 px-2 border-r-2 border-slate-200 mr-2 leading-relaxed">"{res.bio}"</p>}
-                    {res.gallery && res.gallery.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-1 px-1">
-                        {res.gallery.map((img: string, idx: number) => (
-                          <div key={idx} className="w-8 h-8 rounded-md overflow-hidden bg-white border border-slate-100">
-                            <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )
-              ))}
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {activeProfile && (
+          <HistoryProfileModal 
+            result={activeProfile} 
+            onClose={() => setActiveProfile(null)} 
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -1220,6 +1465,17 @@ export default function App() {
       await deleteDoc(doc(db, 'students', id));
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `students/${id}`);
+    }
+  };
+
+  const deleteHistorySession = async (id: string) => {
+    try {
+      // Note: Rules should allow deletion if authenticated or by password logic in UI
+      await deleteDoc(doc(db, 'history', id));
+      alert('تم حذف سجل المسابقة بنجاح.');
+    } catch (err) {
+      console.error("Failed to delete history", err);
+      alert('حدث خطأ أثناء الحذف.');
     }
   };
 
@@ -1530,7 +1786,9 @@ export default function App() {
           {isHistoryModalOpen && (
             <HistoryModal 
               history={history}
+              isAdmin={isAdmin}
               onClose={() => setIsHistoryModalOpen(false)}
+              onDeleteSession={deleteHistorySession}
             />
           )}
           {isScanning && (
