@@ -1,6 +1,6 @@
 {
-  "name": "صدارة فكرة",
-  "description": "تطبيق متطور لإدارة نقاط مسابقات الطلاب - صدارة فكرة.",
+  "name": "صدارة موهوب",
+  "description": "تطبيق متطور لإدارة نقاط مسابقات الطلاب - صدارة موهوب.",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": []
 }

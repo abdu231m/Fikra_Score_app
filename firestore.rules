@@ -65,11 +65,13 @@ service cloud.firestore {
 
     match /history/{historyId} {
       allow read: if true;
-      allow write: if isAdmin() && isValidHistory(incoming());
+      allow create, update: if isAdmin() && isValidHistory(incoming());
+      allow delete: if isAdmin();
 
       match /results/{resultId} {
         allow read: if true;
-        allow write: if isAdmin() && isValidResult(incoming());
+        allow create, update: if isAdmin() && isValidResult(incoming());
+        allow delete: if isAdmin();
       }
     }
   }

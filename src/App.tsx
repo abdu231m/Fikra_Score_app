@@ -22,8 +22,13 @@ import {
   ChevronRight,
   Eye,
   Award,
-  Zap
+  Zap,
+  Download,
+  Share
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import html2canvas from 'html2canvas';
 import { 
   db, 
   auth,
@@ -170,7 +175,7 @@ const Leaderboard = ({ students, isAdmin, onEditStudent }: { students: Student[]
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" id="leaderboard-area">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <h2 className="text-lg font-bold flex items-center gap-3 text-slate-800">
           <span className="w-2 h-6 bg-accent rounded-full"></span>
@@ -259,11 +264,19 @@ const Leaderboard = ({ students, isAdmin, onEditStudent }: { students: Student[]
 const AdminActions = ({ 
   onAddStudent, 
   onOpenScanner,
-  onResetPoints
+  onResetPoints,
+  onSystemReset,
+  onEndCompetition,
+  onExportData,
+  isSuperAdmin
 }: { 
   onAddStudent: () => void, 
   onOpenScanner: () => void,
-  onResetPoints: () => void
+  onResetPoints: () => void,
+  onSystemReset: () => void,
+  onEndCompetition: () => void,
+  onExportData: (type: 'excel' | 'image') => void,
+  isSuperAdmin: boolean
 }) => (
   <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
     <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-xl flex flex-col gap-6">
@@ -287,37 +300,70 @@ const AdminActions = ({
       >
         تفعيل الكاميرا
       </button>
+
+      {/* Export Section */}
+      <div className="grid grid-cols-2 gap-2 mt-2">
+        <button 
+          onClick={() => onExportData('excel')}
+          className="bg-white/10 hover:bg-white/20 text-white/80 py-3 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all"
+        >
+          <Download size={14} />
+          تصدير Excel
+        </button>
+        <button 
+          onClick={() => onExportData('image')}
+          className="bg-white/10 hover:bg-white/20 text-white/80 py-3 rounded-xl text-[10px] font-black flex items-center justify-center gap-2 transition-all"
+        >
+          <Share size={14} />
+          تصدير صورة
+        </button>
+      </div>
     </div>
 
     <div className="flex flex-col gap-4">
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col gap-5 flex-1">
         <div className="border-b border-slate-100 pb-4">
-          <h3 className="font-bold text-slate-800 text-lg text-right">تسجيل سريع</h3>
-          <p className="text-xs font-bold text-slate-400 mt-1 text-right">إضافة متسابق جديد للقاعدة</p>
+          <h3 className="font-bold text-slate-800 text-lg text-right">إدارة المسابقة</h3>
+          <p className="text-xs font-bold text-slate-400 mt-1 text-right">الخيارات المتقدمة للمشرفين</p>
         </div>
         <div className="flex-1 flex flex-col justify-center items-center py-6 text-center">
-          <UserPlus size={48} className="text-slate-100 mb-4" />
-          <p className="text-sm text-slate-400 font-medium mb-6">يمكنك إضافة بيانات الطالب يدوياً وتوليد كود المعرف الخاص به.</p>
-          <button 
-            onClick={onAddStudent} 
-            className="w-full border-2 border-slate-100 text-slate-600 py-3 rounded-xl font-black text-sm hover:bg-slate-50 transition-all active:scale-95"
-          >
-            فتح نموذج التسجيل
-          </button>
+          <div className="flex flex-col w-full gap-3">
+            <button 
+              onClick={onAddStudent} 
+              className="w-full bg-slate-50 border-2 border-slate-100 text-slate-600 py-4 rounded-xl font-black text-sm hover:bg-white hover:border-slate-300 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <UserPlus size={18} />
+              إضافة متسابق يدوي
+            </button>
+
+            {isSuperAdmin && (
+              <>
+                <button 
+                  onClick={onEndCompetition} 
+                  className="w-full bg-primary text-slate-900 py-4 rounded-xl font-black text-sm shadow-lg shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Trophy size={18} />
+                  إنهاء المسابقة والأرشفة
+                </button>
+                <div className="h-px bg-slate-100 my-2"></div>
+                <button 
+                  onClick={onResetPoints}
+                  className="w-full bg-red-50 text-red-500 py-4 rounded-xl font-black text-sm hover:bg-red-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Zap size={18} />
+                  تصفير جميع النقاط
+                </button>
+                <button 
+                  onClick={onSystemReset} 
+                  className="w-full border-2 border-red-500/20 text-red-500 py-4 rounded-xl font-black text-xs hover:bg-red-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={18} />
+                  إعادة ضبط النظام (حذف الأرشيف)
+                </button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      
-      <div className="bg-red-50/50 p-4 rounded-xl border border-red-100 flex items-center justify-between">
-        <div className="text-right">
-          <p className="text-xs font-black text-red-600">تصفير النتائج</p>
-          <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">مسح جميع النقاط للكل</p>
-        </div>
-        <button 
-          onClick={onResetPoints}
-          className="bg-white border border-red-200 text-red-500 px-4 py-2 rounded-lg text-xs font-black hover:bg-red-50 transition-all active:scale-90"
-        >
-          تصفير الكل
-        </button>
       </div>
     </div>
   </div>
@@ -888,6 +934,19 @@ const StudentActionModal = ({ student, isAdmin, onClose, onUpdatePoints, onUpdat
   );
 };
 
+// --- Constants ---
+
+const SEED_STUDENTS = [
+  "علي العواجي", "سعد الشبرمي", "ابراهيم المنيف", "عمر الناظري", "مؤيد العشري",
+  "خليفه علي", "نايف العصيمي", "تميم الغنام", "صالح المدالله", "محمد العقيل",
+  "علي الحمران", "عبدالرحمن الفراج", "سطام القفاري", "عبدالله القفاري", "هشام العبيد",
+  "بدر الزامل", "فارس التويجري", "سلمان التويجري", "عبدالله اللحيدان", "يوسف الحقيل",
+  "عبدالحكيم الحقيل", "عبدالعزيز الفوزان", "سعد القحطاني", "حذيفه عبدالسلام",
+  "عبدالله الرومي", "عبدالعزيز الحسين", "عمر العبدالمنعم", "عبدالله القطامي",
+  "عبدالوهاب البراك", "محمد السديري", "سليمان المعيوف", "سعود السويري",
+  "محمد السويري", "عبدالعزيز الشبرمي"
+];
+
 // --- Main App ---
 
 const HistoryProfileModal = ({ result, onClose }: { result: any, onClose: () => void }) => {
@@ -1339,8 +1398,51 @@ const ResetPointsModal = ({ onClose, onConfirm }: { onClose: () => void, onConfi
   </motion.div>
 );
 
+const ResetSystemModal = ({ onClose, onConfirm }: { onClose: () => void, onConfirm: () => void }) => (
+  <motion.div 
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 bg-slate-900/90 backdrop-blur-xl z-[120] flex items-center justify-center p-6"
+  >
+    <motion.div 
+      initial={{ scale: 0.9, y: 30 }}
+      animate={{ scale: 1, y: 0 }}
+      className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full text-center shadow-2xl border-4 border-red-50"
+    >
+      <div className="w-24 h-24 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-8 rotate-12">
+        <Trash2 size={48} />
+      </div>
+      <h3 className="text-2xl font-black text-slate-800 mb-3">إعادة ضبط النظام الشامل</h3>
+      <div className="space-y-4 mb-10">
+        <p className="text-sm text-slate-400 font-bold leading-relaxed px-2">
+          سيتم <span className="text-red-500 underline">حذف كافة سجلات المسابقات</span> السابقة تماماً، وسيتم <span className="text-red-500 underline">مسح جميع المتسابقين</span> الحاليين واستبدالهم بالقائمة الرسمية المحدثة.
+        </p>
+        <div className="bg-red-50 rounded-xl p-3 text-[10px] font-black text-red-600 uppercase tracking-widest">
+          ⚠️ هذا الإجراء لا يمكن التراجع عنه أبداً
+        </div>
+      </div>
+      <div className="flex flex-col gap-3">
+        <button 
+          onClick={onConfirm}
+          className="w-full bg-red-600 text-white py-5 rounded-2xl font-black text-sm shadow-2xl shadow-red-200 active:scale-95 transition-all"
+        >
+          نعم، احذف كل شيء وابدأ من جديد
+        </button>
+        <button 
+          onClick={onClose}
+          className="w-full bg-slate-100 text-slate-600 py-5 rounded-2xl font-black text-sm active:scale-95 transition-all"
+        >
+          إلغاء العملية
+        </button>
+      </div>
+    </motion.div>
+  </motion.div>
+);
+
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [adminName, setAdminName] = useState('');
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -1358,15 +1460,18 @@ export default function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [isEndingCompetition, setIsEndingCompetition] = useState(false);
   const [isResettingPoints, setIsResettingPoints] = useState(false);
+  const [isResettingSystem, setIsResettingSystem] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
 
   useEffect(() => {
     // Check local storage for session
     const savedAdmin = localStorage.getItem('comp_admin_name');
+    const savedSuper = localStorage.getItem('comp_is_super') === 'true';
     if (savedAdmin) {
       setIsAdmin(true);
       setAdminName(savedAdmin);
+      setIsSuperAdmin(savedSuper);
     }
 
     // Real-time leaderboard
@@ -1400,9 +1505,14 @@ export default function App() {
   const handleLogin = (e: FormEvent) => {
     e.preventDefault();
     if (loginPassword === '12357') {
+      const superUser = 'عبدالرحمن محجوب';
+      const isSuper = loginUsername === superUser;
+      
       setIsAdmin(true);
+      setIsSuperAdmin(isSuper);
       setAdminName(loginUsername || 'المشرف');
       localStorage.setItem('comp_admin_name', loginUsername || 'المشرف');
+      localStorage.setItem('comp_is_super', isSuper ? 'true' : 'false');
       setLoginError(false);
       setIsLoginModalOpen(false);
     } else {
@@ -1412,8 +1522,10 @@ export default function App() {
 
   const handleLogout = () => {
     setIsAdmin(false);
+    setIsSuperAdmin(false);
     setAdminName('');
     localStorage.removeItem('comp_admin_name');
+    localStorage.removeItem('comp_is_super');
   };
 
   const addStudent = async (studentData: Partial<Student>) => {
@@ -1470,18 +1582,121 @@ export default function App() {
 
   const deleteHistorySession = async (id: string) => {
     try {
-      // Note: Rules should allow deletion if authenticated or by password logic in UI
+      setIsLoading(true);
+      // 1. Delete results subcollection
+      const resultsRef = collection(db, `history/${id}/results`);
+      const resultsSnap = await getDocs(resultsRef);
+      for (const d of resultsSnap.docs) {
+        await deleteDoc(d.ref);
+      }
+      
+      // 2. Delete main session doc
       await deleteDoc(doc(db, 'history', id));
-      alert('تم حذف سجل المسابقة بنجاح.');
+      alert('✅ تم حذف سجل المسابقة بنجاح مع كافة تفاصيلها.');
     } catch (err) {
       console.error("Failed to delete history", err);
-      alert('حدث خطأ أثناء الحذف.');
+      alert('❌ فشل في حذف سجل المسابقة. يرجى مراجعة الصلاحيات.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const resetAllPoints = async () => {
     if (!isAdmin) return;
     setIsResettingPoints(true);
+  };
+
+  const exportToExcel = () => {
+    const data = students.map(s => ({
+      'الاسم': s.name,
+      'النقاط': s.points,
+      'المرحلة': s.grade || '',
+      'كود المعرف': s.qrCode
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "النتائج");
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `نتائج_المسابقة_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToImage = async () => {
+    const element = document.getElementById('leaderboard-area');
+    if (!element) return;
+    try {
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        scale: 2,
+        backgroundColor: '#f8fafc'
+      });
+      canvas.toBlob((blob) => {
+        if (blob) saveAs(blob, `لوحة_المتصدرين_${new Date().toISOString().split('T')[0]}.png`);
+      });
+    } catch (error) {
+      console.error("Export image failed", error);
+    }
+  };
+
+  const handleExport = (type: 'excel' | 'image') => {
+    if (type === 'excel') exportToExcel();
+    else exportToImage();
+  };
+
+  const resetSystemAndSeed = async () => {
+    if (!isAdmin) return;
+    setIsResettingSystem(true);
+  };
+
+  const confirmResetSystemAndSeed = async () => {
+    setIsResettingSystem(false);
+    try {
+      setIsLoading(true);
+      
+      // 1. Get all history sessions
+      const historySnapshot = await getDocs(collection(db, 'history'));
+      
+      // Sequential deletion for maximum reliability
+      for (const historyDoc of historySnapshot.docs) {
+        const resultsSnapshot = await getDocs(collection(db, `history/${historyDoc.id}/results`));
+        for (const resDoc of resultsSnapshot.docs) {
+          await deleteDoc(resDoc.ref);
+        }
+        await deleteDoc(historyDoc.ref);
+      }
+
+      // 2. Delete all current students
+      const studentsSnapshot = await getDocs(collection(db, 'students'));
+      for (const studentDoc of studentsSnapshot.docs) {
+        await deleteDoc(studentDoc.ref);
+      }
+
+      // 3. Add new students
+      // We'll use batches for students as they are usually less than 500
+      const finalBatch = writeBatch(db);
+      SEED_STUDENTS.forEach(name => {
+        const studentRef = doc(collection(db, 'students'));
+        finalBatch.set(studentRef, {
+          name,
+          grade: 'طالب',
+          points: 0,
+          qrCode: 'ST-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
+          avatarUrl: '',
+          bio: '',
+          gallery: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      });
+
+      await finalBatch.commit();
+      alert('✅ تم إعادة ضبط النظام وحذف الأرشيف بنجاح!');
+    } catch (err) {
+      console.error("System reset failed", err);
+      alert('❌ فشل في إعادة ضبط النظام. يرجى التأكد من صلاحيات الإنترنت.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const confirmResetPoints = async () => {
@@ -1585,7 +1800,7 @@ export default function App() {
             <img 
               id="header-logo" 
               src="/logo.png" 
-              alt="صدارة فكرة" 
+              alt="صدارة موهوب" 
               className="w-full h-full object-contain drop-shadow-sm"
               onError={(e) => {
                 // Fallback to a placeholder if logo.png is not found
@@ -1594,7 +1809,7 @@ export default function App() {
               referrerPolicy="no-referrer"
             />
           </div>
-          <h1 id="header-title" className="text-xl font-black tracking-tight text-slate-800 bg-linear-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">صدارة فكرة</h1>
+          <h1 id="header-title" className="text-xl font-black tracking-tight text-slate-800 bg-linear-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">صدارة موهوب</h1>
           
           <button 
             onClick={() => setIsHistoryModalOpen(true)}
@@ -1659,17 +1874,21 @@ export default function App() {
             onEditStudent={(s) => setSelectedStudent(s)} 
           />
           
-          {isAdmin && (
-            <AdminActions 
-              onAddStudent={() => setIsAddingStudent(true)} 
-              onOpenScanner={() => setIsScanning(true)}
-              onResetPoints={resetAllPoints}
-            />
-          )}
+            {isAdmin && (
+              <AdminActions 
+                onAddStudent={() => setIsAddingStudent(true)} 
+                onOpenScanner={() => setIsScanning(true)}
+                onResetPoints={resetAllPoints}
+                onSystemReset={resetSystemAndSeed}
+                onEndCompetition={() => setIsEndingCompetition(true)}
+                onExportData={handleExport}
+                isSuperAdmin={isSuperAdmin}
+              />
+            )}
         </div>
 
         <footer className="mt-12 pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 font-bold uppercase tracking-widest gap-4">
-           <div>صدارة فكرة © 2026</div>
+           <div>صدارة موهوب © 2026</div>
            <div className="flex items-center gap-2">
              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
              البيانات مزامنة لحظياً
@@ -1781,6 +2000,12 @@ export default function App() {
             <ResetPointsModal 
               onClose={() => setIsResettingPoints(false)}
               onConfirm={confirmResetPoints}
+            />
+          )}
+          {isResettingSystem && (
+            <ResetSystemModal 
+              onClose={() => setIsResettingSystem(false)}
+              onConfirm={confirmResetSystemAndSeed}
             />
           )}
           {isHistoryModalOpen && (
